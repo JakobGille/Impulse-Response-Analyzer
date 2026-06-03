@@ -4,9 +4,13 @@
 # Impulse Response Analyzer
 #
 # Description: Analyzes room impulse responses (Mono, Stereo, AmbiX B-Format).
-# Implements ISO 3382 noise floor truncation, onset detection, spatial metrics,
-# and a Spatio-Temporal Directional Heatmap for 1st-order Ambisonics.
+# Implements ISO 3382 truncation, onset detection, spatial metrics,
+# Spatio-Temporal Heatmap, and a 3D Mollweide Projection for Ambisonics.
 # Generates an HTML report with localized English target values.
+
+#Created by: Jakob Gille & Gemini AI
+#Date: 03.06.2026
+#Version: 1.0.0 - Initial release
 # =============================================================================
 
 import os
@@ -29,7 +33,6 @@ warnings.filterwarnings("ignore", category=WavFileWarning)
 # --- Core Analysis Functions ---
 
 def find_ir_start(signal, threshold_db=-20):
-    """Finds the true onset of the impulse response by searching backwards from the peak."""
     peak_idx = np.argmax(np.abs(signal))
     peak_val = np.abs(signal[peak_idx])
     threshold = peak_val * (10 ** (threshold_db / 20))
@@ -253,7 +256,6 @@ def plot_waveform(ir, fs):
     time = np.arange(len(ir)) / fs
     ax.plot(time, ir, color='#007ACC')
     
-    # Mark the detected onset
     start_idx = find_ir_start(ir)
     ax.axvline(start_idx / fs, color='r', linestyle=':', label='Detected Onset')
     
@@ -346,7 +348,7 @@ def plot_spatio_temporal_heatmap(w, x, y, fs):
     fig, ax = plt.subplots(figsize=(10, 5))
     cax = ax.pcolormesh(xedges, yedges, H_db, shading='auto', cmap='magma', vmin=-40, vmax=0)
 
-    ax.set_title('Spatio-Temporal Heatmap (Early Reflections 0-100ms)')
+    ax.set_title('Spatio-Temporal Heatmap (Horizontal Reflections 0-100ms)')
     ax.set_xlabel('Time (ms)')
     ax.set_ylabel('Azimuth (Degrees)')
     ax.set_yticks([-180, -90, 0, 90, 180])
@@ -354,6 +356,48 @@ def plot_spatio_temporal_heatmap(w, x, y, fs):
     ax.grid(True, linestyle='--', alpha=0.3)
 
     fig.colorbar(cax, ax=ax, label='Relative Intensity (dB)')
+    return plot_to_base64(fig)
+
+def plot_mollweide_heatmap(w, x, y, z, fs):
+    """Generates a 3D Mollweide projection of early reflection intensity."""
+    start_index = find_ir_start(w)
+    end_index = start_index + int(0.100 * fs)
+    if end_index > len(w): end_index = len(w)
+
+    w_trim = w[start_index:end_index]
+    x_trim = x[start_index:end_index]
+    y_trim = y[start_index:end_index]
+    z_trim = z[start_index:end_index]
+
+    i_x = w_trim * x_trim
+    i_y = w_trim * y_trim
+    i_z = w_trim * z_trim
+
+    intensity_mag = np.sqrt(i_x**2 + i_y**2 + i_z**2)
+    intensity_mag_safe = np.where(intensity_mag == 0, 1e-12, intensity_mag)
+
+    azimuth = np.arctan2(i_y, i_x)
+    elevation = np.arcsin(np.clip(i_z / intensity_mag_safe, -1.0, 1.0))
+
+    azimuth_bins = 72
+    elevation_bins = 36
+
+    H, lon_edges, lat_edges = np.histogram2d(azimuth, elevation, bins=[azimuth_bins, elevation_bins],
+                                             range=[[-np.pi, np.pi], [-np.pi/2, np.pi/2]], weights=intensity_mag)
+
+    H_db = 10 * np.log10(H.T + 1e-12)
+    H_db = H_db - np.max(H_db)
+
+    fig = plt.figure(figsize=(10, 5))
+    ax = fig.add_subplot(111, projection='mollweide')
+
+    lon, lat = np.meshgrid(lon_edges, lat_edges)
+    cax = ax.pcolormesh(lon, lat, H_db, cmap='magma', vmin=-40, vmax=0, shading='auto')
+
+    ax.set_title('3D Directional Energy Mapping (Mollweide Projection, 0-100ms)', pad=20)
+    ax.grid(True, linestyle='--', alpha=0.5)
+
+    fig.colorbar(cax, ax=ax, label='Relative Intensity (dB)', orientation='vertical', fraction=0.046, pad=0.04)
     return plot_to_base64(fig)
 
 # --- File Handling and Report Generation ---
@@ -379,7 +423,7 @@ def generate_html_report(filename, base_filename, params, plots, channel_config)
     
     channel_note = ""
     spatial_section = ""
-    spatial_heatmap_html = ""
+    spatial_plots_html = ""
     
     if channel_config == "Stereo":
         channel_note = "<p style='color: #c7254e; font-weight: bold;'>Note: Stereo file detected. Mono-Mixdown used for broadband metrics. L/R used for IACC.</p>"
@@ -394,7 +438,7 @@ def generate_html_report(filename, base_filename, params, plots, channel_config)
         </table>
         """
     elif channel_config == "AmbiX":
-        channel_note = "<p style='color: #c7254e; font-weight: bold;'>Note: AmbiX B-Format detected (Assumed ACN: W, Y, Z, X). Ch 1 (W) used for broadband. Ch 1 & 2 used for LF. Ch 1, 2, 4 used for Heatmap.</p>"
+        channel_note = "<p style='color: #c7254e; font-weight: bold;'>Note: AmbiX B-Format detected (ACN: W, Y, Z, X). Full 3D spatial analysis applied.</p>"
         spatial_section = f"""
         <h2>Spatial Parameters (Ambisonics)</h2>
         <table class="results-table">
@@ -407,7 +451,9 @@ def generate_html_report(filename, base_filename, params, plots, channel_config)
         """
         
     if "spatial_heatmap" in plots:
-        spatial_heatmap_html = f'<div class="plot"><h3>Directional Energy Mapping</h3><img src="data:image/png;base64,{plots["spatial_heatmap"]}" alt="Spatial Heatmap"></div>'
+        spatial_plots_html += f'<div class="plot"><h3>Horizontal Energy Mapping</h3><img src="data:image/png;base64,{plots["spatial_heatmap"]}" alt="Spatial Heatmap"></div>'
+    if "mollweide_heatmap" in plots:
+        spatial_plots_html += f'<div class="plot"><h3>3D Spherical Energy Mapping</h3><img src="data:image/png;base64,{plots["mollweide_heatmap"]}" alt="Mollweide Heatmap"></div>'
 
     html_content = f"""
     <!DOCTYPE html>
@@ -479,7 +525,7 @@ def generate_html_report(filename, base_filename, params, plots, channel_config)
             {spatial_section}
 
             <h2>Plots</h2>
-            {spatial_heatmap_html}
+            {spatial_plots_html}
             <div class="plot"><h3>Octave Band Reverberation Time</h3><img src="data:image/png;base64,{plots['rt60_bands']}" alt="RT60 Bands"></div>
             <div class="plot"><h3>Spectrogram / Waterfall</h3><img src="data:image/png;base64,{plots['waterfall']}" alt="Waterfall"></div>
             <div class="plot"><h3>Waveform</h3><img src="data:image/png;base64,{plots['waveform']}" alt="Waveform"></div>
@@ -515,6 +561,7 @@ def main():
                 channel_config = "AmbiX"
                 mono_signal = signal[:, 0] # W
                 y_channel = signal[:, 1]   # Y
+                z_channel = signal[:, 2]   # Z
                 x_channel = signal[:, 3]   # X
             elif signal.shape[1] == 2:
                 channel_config = "Stereo"
@@ -557,6 +604,7 @@ def main():
     elif channel_config == "AmbiX":
         all_params['LF'] = calculate_lf(mono_signal, y_channel, fs)
         plots['spatial_heatmap'] = plot_spatio_temporal_heatmap(mono_signal, x_channel, y_channel, fs)
+        plots['mollweide_heatmap'] = plot_mollweide_heatmap(mono_signal, x_channel, y_channel, z_channel, fs)
 
     report_file = generate_html_report(filepath, base_filename, all_params, plots, channel_config)
     print(f"Done. Report saved to: {os.path.abspath(report_file)}")

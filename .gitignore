@@ -29,4 +29,5 @@ htmlcov/
 *.pem
 
 # Excluded files
-*.html
+Analysis Files/
+

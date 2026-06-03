@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acoustic Analysis Guide</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --sidebar-bg: #222222;
+            --text-color: #e0e0e0;
+            --accent-color: #007ACC;
+            --accent-hover: #005A9C;
+            --secondary-text: #a0a0a0;
+            --card-bg: #2d2d2d;
+            --border-color: #444;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            position: sticky;
+            top: 0;
+            background-color: var(--sidebar-bg);
+            z-index: 10;
+        }
+
+        .nav-group {
+            margin: 15px 0 5px 20px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--secondary-text);
+            letter-spacing: 1px;
+        }
+
+        .sidebar nav a {
+            display: block;
+            padding: 10px 20px 10px 30px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background-color 0.2s, color 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar nav a:hover {
+            background-color: rgba(0, 122, 204, 0.1);
+            color: var(--accent-color);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        /* Main Content Area */
+        .content {
+            flex-grow: 1;
+            padding: 40px 60px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .content-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        section {
+            margin-bottom: 60px;
+            scroll-margin-top: 40px; /* Accounts for scrolling clearance */
+        }
+
+        h1 {
+            color: var(--accent-color);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: #fff;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #89CFF0;
+            margin-top: 30px;
+        }
+
+        p {
+            line-height: 1.6;
+            font-size: 1.05rem;
+            color: #ccc;
+        }
+
+        .target-box {
+            background-color: rgba(0, 122, 204, 0.15);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-weight: bold;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .formula {
+            font-family: "Courier New", Courier, monospace;
+            background-color: #111;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: inline-block;
+            color: #89CFF0;
+            border: 1px solid var(--border-color);
+            margin: 10px 0;
+        }
+
+        .intro-text {
+            font-size: 1.2rem;
+            color: var(--secondary-text);
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">IR Analysis Guide</div>
+        
+        <div class="nav-group">Time & Decay</div>
+        <nav>
+            <a href="#edt">Early Decay Time (EDT)</a>
+            <a href="#rt60">Reverberation Time (RT60)</a>
+            <a href="#center-time">Center Time (Ts)</a>
+        </nav>
+
+        <div class="nav-group">Tonal Balance</div>
+        <nav>
+            <a href="#tonal-ratios">Bass & Treble Ratios</a>
+        </nav>
+
+        <div class="nav-group">Clarity & Definition</div>
+        <nav>
+            <a href="#clarity">Clarity (C50 / C80)</a>
+            <a href="#definition">Definition (D50)</a>
+            <a href="#first-reflection">First Reflection Gap</a>
+        </nav>
+
+        <div class="nav-group">Spatial Parameters</div>
+        <nav>
+            <a href="#iacc">Interaural Cross-Correlation</a>
+            <a href="#lf80">Early Lateral Fraction</a>
+        </nav>
+
+        <div class="nav-group">Visual Analysis & Plots</div>
+        <nav>
+            <a href="#plot-waveform">Waveform & Onset</a>
+            <a href="#plot-decay">Energy Decay Curve</a>
+            <a href="#plot-octave">Octave Band RT60</a>
+            <a href="#plot-freq">Frequency Response</a>
+            <a href="#plot-spectrogram">Spectrogram (Waterfall)</a>
+            <a href="#plot-spatial">Directional Energy Maps</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <div class="content-container">
+            
+            <section id="intro">
+                <h1>Acoustic Parameters Guide</h1>
+                <p class="intro-text">This reference document explains the physical calculations, psychoacoustic implications, and standard targets for all parameters and plots generated by the Impulse Response Analyzer.</p>
+            </section>
+
+            <h2 id="section-time">Time & Decay Metrics</h2>
+            
+            <section id="edt">
+                <h3>Early Decay Time (EDT)</h3>
+                <p><strong>The Concept:</strong> EDT measures how fast sound decays during the very first 10 dB of the drop, extrapolated to a full 60 dB decay. It is derived from the initial slope of the Schroeder integration.</p>
+                <p><strong>Psychoacoustic Meaning:</strong> Unlike standard RT60 (which is a physical room constant), EDT correlates directly with the human perception of reverberance. Because the early decay happens while the sound is loudest, our auditory system relies on this brief temporal window to judge how "wet" or "dry" a room sounds.</p>
+                <div class="target-box">Target: 0.2s - 0.4s (Studio Control Rooms) | 1.0s - 2.0s (Concert Halls)</div>
+            </section>
+
+            <section id="rt60">
+                <h3>Reverberation Time (RT60 / T20 / T30)</h3>
+                <p><strong>The Concept:</strong> The time it takes for a sound to decay by 60 dB. Because reaching a full 60 dB drop is mathematically rare due to background noise, it is extrapolated. <strong>T20</strong> measures the drop from -5 dB to -25 dB. <strong>T30</strong> measures from -5 dB to -35 dB.</p>
+                <p><strong>Psychoacoustic Meaning:</strong> It represents the physical baseline of the room's acoustic energy storage. It defines the "tail" of the sound. T30 is highly robust against noise floor anomalies and represents the actual physical decay characteristics of the space.</p>
+                <div class="target-box">Target: Strictly dependent on room volume and intended application.</div>
+            </section>
+
+            <section id="center-time">
+                <h3>Center Time (Ts)</h3>
+                <p><strong>The Concept:</strong> Calculates the temporal center of gravity of the squared impulse response.</p>
+                <p class="formula">Ts = ∫ (t * p²(t) dt) / ∫ p²(t) dt</p>
+                <p><strong>Psychoacoustic Meaning:</strong> It is a measure of acoustic intimacy and transparency. A lower value means the energy is concentrated at the beginning (direct sound), making the source sound close, present, and highly defined. A high value means energy is spread heavily into the late reverb tail, pushing the sound source away from the listener.</p>
+                <div class="target-box">Target: &lt; 80 ms (Speech / High Definition) | 80 ms - 150 ms (Music)</div>
+            </section>
+
+            <h2 id="section-tonal">Tonal Balance</h2>
+
+            <section id="tonal-ratios">
+                <h3>Bass Ratio (BR) & Treble Ratio (TR)</h3>
+                <p><strong>The Concept:</strong> These ratios compare extrapolated reverberation times across standard octave bands.</p>
+                <ul>
+                    <li><strong>Bass Ratio (BR):</strong> RT60 of low frequencies (125 Hz + 250 Hz) divided by mid frequencies (500 Hz + 1000 Hz).</li>
+                    <li><strong>Treble Ratio (TR):</strong> RT60 of high frequencies (2000 Hz + 4000 Hz) divided by mid frequencies.</li>
+                </ul>
+                <p><strong>Psychoacoustic Meaning:</strong> BR objectively quantifies acoustic <em>warmth</em>. TR quantifies <em>brilliance</em>. Rooms with an excessively high BR sound boomy and muddy. TR usually falls naturally below 1.0 because air molecules absorb high frequencies over distance.</p>
+                <div class="target-box">
+                    Target BR: 1.1 - 1.25 (Classical warmth). Values > 1.5 indicate boominess.<br>
+                    Target TR: 0.8 - 1.0
+                </div>
+            </section>
+
+            <h2 id="section-clarity">Clarity & Definition</h2>
+
+            <section id="clarity">
+                <h3>Clarity (C50 / C80)</h3>
+                <p><strong>The Concept:</strong> An early-to-late energy ratio expressed logarithmically in decibels. <strong>C50</strong> compares energy before 50 ms to energy after 50 ms. <strong>C80</strong> uses an 80 ms integration threshold.</p>
+                <p><strong>Psychoacoustic Meaning:</strong> The human ear integrates early reflections with the direct sound, increasing perceived loudness and clarity. Reflections arriving late create reverberant masking. C50 is the benchmark for <strong>Speech Intelligibility</strong> (syllables are short). C80 is the benchmark for <strong>Music Clarity</strong> (musical notes are longer).</p>
+                <div class="target-box">
+                    Target C50 (Speech): > 2 dB<br>
+                    Target C80 (Music): -2 dB to +4 dB (Higher for rhythmic music, lower for choral blending).
+                </div>
+            </section>
+
+            <section id="definition">
+                <h3>Definition (D50)</h3>
+                <p><strong>The Concept:</strong> Similar to C50, but expressed as a linear percentage instead of a logarithmic ratio. It measures the early energy (0-50 ms) relative to the <em>total</em> energy of the impulse response.</p>
+                <p><strong>Psychoacoustic Meaning:</strong> Primarily used to evaluate syllable articulation. If D50 is exactly 50%, the early sound and the late reverberation have equivalent energetic weight.</p>
+                <div class="target-box">Target: > 50% for good speech definition.</div>
+            </section>
+
+            <section id="first-reflection">
+                <h3>First Reflection Gap</h3>
+                <p><strong>The Concept:</strong> The absolute time delay (in milliseconds) between the arrival of the direct sound (the initial impulse peak) and the arrival of the very first distinct boundary reflection (floor, ceiling, or closest wall).</p>
+                <p><strong>Psychoacoustic Meaning:</strong> To localize a sound accurately without tonal coloration, the auditory system requires an Initial Time Delay Gap (Haas effect). If strong reflections arrive too early, they cause destructive phase interference known as comb filtering, severely altering the frequency response of the direct sound.</p>
+                <div class="target-box">Target: > 15 to 20 ms gap (Achieved in studios using Reflection Free Zones).</div>
+            </section>
+
+            <h2 id="section-spatial">Spatial Parameters</h2>
+
+            <section id="iacc">
+                <h3>Interaural Cross-Correlation (IACC)</h3>
+                <p><strong>The Concept:</strong> Calculated exclusively from Stereo files. It mathematically correlates the early sound (0-80 ms) arriving at the Left channel against the Right channel. 1.0 means identical signals; 0.0 means completely uncorrelated signals.</p>
+                <p><strong>Psychoacoustic Meaning:</strong> IACC dictates the <em>Apparent Source Width (ASW)</em>. Highly correlated signals sound like a narrow point source trapped inside the head. Highly uncorrelated early reflections widen the phantom source, giving the listener a sense of spaciousness.</p>
+                <div class="target-box">Target: &lt; 0.3 (Excellent envelopment) | > 0.6 (Narrow, poorly distributed soundfield).</div>
+            </section>
+
+            <section id="lf80">
+                <h3>Early Lateral Fraction (LF80)</h3>
+                <p><strong>The Concept:</strong> Calculated from Ambisonics B-Format signals. It is the ratio of early lateral energy (Y-Channel, Figure-8, 5-80 ms) to total early energy (W-Channel, Omni, 0-80 ms).</p>
+                <p><strong>Psychoacoustic Meaning:</strong> Measures <em>Listener Envelopment (LEV)</em>. The denominator includes the massive energy of the direct sound at 0 ms. The numerator excludes the direct sound (starts at 5ms) and captures only side reflections. Therefore, values must be relatively low. If values are too high, side reflections overpower the direct sound, destroying frontal localization.</p>
+                <div class="target-box">
+                    Target: 0.10 to 0.35.<br>
+                    &lt; 0.10 sounds like a dead, mono-like free-field.<br>
+                    > 0.35 causes loss of phantom source localization.
+                </div>
+            </section>
+
+            <h2 id="section-plots">Visual Analysis & Plots</h2>
+
+            <section id="plot-waveform">
+                <h3>Waveform & Onset</h3>
+                <p><strong>What it shows:</strong> A time-domain plot of the raw amplitude of the impulse response (Mono or W-Channel). A red dotted vertical line explicitly marks the algorithmically detected onset.</p>
+                <p><strong>How to read it:</strong> This plot verifies that the analysis is synchronized correctly. If the measurement contains a long pre-delay (silence before the actual sweep/clap), the red line indicates where the script identified the direct sound emerging from the noise floor, ensuring precise temporal calculations (C50/C80).</p>
+            </section>
+
+            <section id="plot-decay">
+                <h3>Broadband Energy Decay Curve</h3>
+                <p><strong>What it shows:</strong> The Schroeder integration curve plotted on a logarithmic (dB) scale over time. It visualizes the total energy leaving the room.</p>
+                <p><strong>How to read it:</strong> A perfect room decay looks like a straight, smooth diagonal line. Visible "bumps" or sudden changes in the slope indicate acoustic anomalies, such as coupled spaces (sound escaping into a hallway and bouncing back) or flutter echoes. The curve abruptly stops where the ISO 3382 algorithm truncated the integration to prevent noise-floor contamination.</p>
+            </section>
+
+            <section id="plot-octave">
+                <h3>Octave Band Reverberation Time</h3>
+                <p><strong>What it shows:</strong> A bar chart displaying the calculated T30 (Reverberation Time) across six standard octave bands (125 Hz to 4 kHz).</p>
+                <p><strong>How to read it:</strong> This reveals the tonal coloration of the reverb. A flat line means the room decays evenly. Tall bars on the left (125/250 Hz) indicate a room that traps low-end energy (common in small untreated rooms). Tall bars on the right indicate highly reflective surfaces (like glass or tile).</p>
+            </section>
+
+            <section id="plot-freq">
+                <h3>Frequency Response</h3>
+                <p><strong>What it shows:</strong> The spectral magnitude of the entire impulse response, calculated via a Fast Fourier Transform (FFT). The bold line represents a 1/3 octave smoothing.</p>
+                <p><strong>How to read it:</strong> This represents the "EQ curve" of the room. Deep, narrow dips (nulls) indicate phase cancellations caused by boundary reflections. Massive peaks in the low end (below 200 Hz) highlight resonant room modes (standing waves).</p>
+            </section>
+
+            <section id="plot-spectrogram">
+                <h3>Spectrogram (Top-Down Waterfall)</h3>
+                <p><strong>What it shows:</strong> A 2D time-frequency representation. Time is on the X-axis, frequency is on the Y-axis (logarithmic), and color intensity represents acoustic energy (dB).</p>
+                <p><strong>How to read it:</strong> This plot combines the frequency response and the decay curve. It shows exactly <em>which</em> frequencies ring out the longest. A long, bright horizontal streak at 100 Hz clearly identifies a problematic, lingering room resonance.</p>
+            </section>
+
+            <section id="plot-spatial">
+                <h3>Directional Energy Mapping (Ambisonics Only)</h3>
+                <p><strong>What it shows:</strong> Active intensity vector mapping derived from B-Format signals (W, X, Y, Z).</p>
+                <ul>
+                    <li><strong>Horizontal Heatmap (Azimuth vs. Time):</strong> Shows when early reflections arrive (0-100ms) and from which angle on the horizontal plane. 0° is front, ±90° are the sides, ±180° is the rear.</li>
+                    <li><strong>3D Spherical Heatmap (Mollweide):</strong> An equirectangular projection mapping Azimuth (X-axis) against Elevation (Y-axis).</li>
+                </ul>
+                <p><strong>How to read it:</strong> These plots act as an acoustic radar. A bright spot on the horizontal map at 20ms / 90° points precisely to a strong reflection off the left wall. A bright spot on the Mollweide map directly above the center (0° Azimuth, +90° Elevation) identifies an untreated ceiling reflection.</p>
+            </section>
+
+        </div>
+    </main>
+
+</body>
+</html>
