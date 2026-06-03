@@ -5,12 +5,8 @@
 #
 # Description: Analyzes room impulse responses (Mono, Stereo, AmbiX B-Format).
 # Implements ISO 3382 truncation, onset detection, spatial metrics,
-# Spatio-Temporal Heatmap, and a 3D Mollweide Projection for Ambisonics.
-# Generates an HTML report with localized English target values.
-
-#Created by: Jakob Gille & Gemini AI
-#Date: 03.06.2026
-#Version: 1.0.0 - Initial release
+# Spatio-Temporal Heatmap (Right at bottom), and 3D Mollweide Projection.
+# Generates an HTML report with localized target values.
 # =============================================================================
 
 import os
@@ -331,6 +327,8 @@ def plot_spatio_temporal_heatmap(w, x, y, fs):
     i_x = w_trim * x_trim
     i_y = w_trim * y_trim
 
+    # Im AmbiX ACN Standard ist i_y positiv für Schalleinfall von Links.
+    # Durch np.arctan2(i_y, i_x) ergibt Links +90° (oben) und Rechts -90° (unten).
     azimuth = np.degrees(np.arctan2(i_y, i_x))
     intensity_mag = np.sqrt(i_x**2 + i_y**2)
 
@@ -359,7 +357,6 @@ def plot_spatio_temporal_heatmap(w, x, y, fs):
     return plot_to_base64(fig)
 
 def plot_mollweide_heatmap(w, x, y, z, fs):
-    """Generates a 3D Mollweide projection of early reflection intensity."""
     start_index = find_ir_start(w)
     end_index = start_index + int(0.100 * fs)
     if end_index > len(w): end_index = len(w)
@@ -376,7 +373,8 @@ def plot_mollweide_heatmap(w, x, y, z, fs):
     intensity_mag = np.sqrt(i_x**2 + i_y**2 + i_z**2)
     intensity_mag_safe = np.where(intensity_mag == 0, 1e-12, intensity_mag)
 
-    azimuth = np.arctan2(i_y, i_x)
+    # Invertierung beibehalten für die Sphärische Projektion, damit Links auf der linken Seite ist
+    azimuth = np.arctan2(-i_y, i_x)
     elevation = np.arcsin(np.clip(i_z / intensity_mag_safe, -1.0, 1.0))
 
     azimuth_bins = 72
@@ -393,6 +391,9 @@ def plot_mollweide_heatmap(w, x, y, z, fs):
 
     lon, lat = np.meshgrid(lon_edges, lat_edges)
     cax = ax.pcolormesh(lon, lat, H_db, cmap='magma', vmin=-40, vmax=0, shading='auto')
+    
+    ax.set_xticks(np.radians([-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150]))
+    ax.set_xticklabels(['-150°', '-120°', 'Left\n(-90°)', '-60°', '-30°', 'Front\n(0°)', '30°', '60°', 'Right\n(+90°)', '120°', '150°'], fontsize=8)
 
     ax.set_title('3D Directional Energy Mapping (Mollweide Projection, 0-100ms)', pad=20)
     ax.grid(True, linestyle='--', alpha=0.5)
