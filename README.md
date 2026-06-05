@@ -1,6 +1,6 @@
 # Impulse Response Analyzer
 
-A Python-based analysis tool for Room Impulse Responses (RIR). This script processes Mono, Stereo, and Ambisonics B-Format (AmbiX) WAV files, calculates key acoustic parameters, and generates a clean, standalone HTML report with comprehensive visualizations. Check out the Example Analysis Report to take a look at the output of the script. 
+A Python-based analysis tool for Room Impulse Responses (RIR). This script processes Mono, Stereo, and Ambisonics B-Format (AmbiX) WAV files, calculates key acoustic parameters, and generates a standalone HTML report with comprehensive visualizations. Check out the Example Analysis Report to take a look at the output of the script. 
 
 Check out an example analysis here: [Link] (Example_Analysis_Report.html)
 
