@@ -30,7 +30,7 @@ The tool automatically detects the channel format of the loaded WAV file (Mono, 
 * Octave Band RT60 Bar Chart (125 Hz – 4 kHz)
 * Directional Energy Heatmaps (Ambisonics only)
 
-Find here a more detailed description of all acoustic parameters that are getting analyzed: [Link](IR Analyzer_Acoustic Parameters Guide.html)
+Find here a more detailed description of all acoustic parameters that are getting analyzed: [Link](IR_Analyzer_Acoustic_Parameters_Guide.html)
 
 ## System Requirements & Installation
 
